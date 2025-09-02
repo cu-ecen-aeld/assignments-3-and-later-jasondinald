@@ -1,5 +1,8 @@
 #include "systemcalls.h"
-
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/wait.h>
 /**
  * @param cmd the command to execute with system()
  * @return true if the command in @param cmd was executed
@@ -9,6 +12,15 @@
 */
 bool do_system(const char *cmd)
 {
+    int rc=system(cmd);
+    if (rc==0){
+        return true;
+    }
+    else {
+	return false;
+
+    }
+}
 
 /*
  * TODO  add your code here
@@ -17,8 +29,6 @@ bool do_system(const char *cmd)
  *   or false() if it returned a failure
 */
 
-    return true;
-}
 
 /**
 * @param count -The numbers of variables passed to the function. The variables are command to execute.
@@ -41,13 +51,13 @@ bool do_exec(int count, ...)
     char * command[count+1];
     int i;
     for(i=0; i<count; i++)
+
     {
         command[i] = va_arg(args, char *);
     }
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
 
 /*
  * TODO:
@@ -59,9 +69,26 @@ bool do_exec(int count, ...)
  *
 */
 
-    va_end(args);
+    int status;
+    pid_t pid;
+    pid=fork( );
+    if (pid == -1){
+        return false;
 
-    return true;
+    }
+    else if (pid ==0){	    
+        execv(command[0],command);
+        exit (-1);
+    }
+    if (waitpid (pid, &status, 0) == -1){
+        return false;
+    }
+    else if (WIFEXITED (status)){
+       return WEXITSTATUS (status);
+    }
+
+    return false;
+    va_end(args);
 }
 
 /**
@@ -75,16 +102,42 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
+    int status;
     for(i=0; i<count; i++)
     {
+	
         command[i] = va_arg(args, char *);
+	
     }
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    pid_t pid;
+    int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+    if (fd < 0) { perror("open"); abort(); }
+    switch (pid = fork()) {
+      case -1: perror("fork"); abort();
+      case 0:
+        if (dup2(fd, 1) < 0) { perror("dup2"); abort(); }
+        close(fd);
+        execv(command[0],command); perror("execv"); abort();
+      default:
+        close(fd);
+    if (waitpid (pid, &status, 0) == -1){
+        return false;
+    }
+    else if (WIFEXITED (status)){
+       return WEXITSTATUS (status);
+    }
 
+    return false;
 
+    va_end(args);
+    }
+}
+
+	
+    
 /*
  * TODO
  *   Call execv, but first using https://stackoverflow.com/a/13784315/1446624 as a refernce,
@@ -93,7 +146,4 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *
 */
 
-    va_end(args);
 
-    return true;
-}
