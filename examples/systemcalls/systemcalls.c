@@ -84,6 +84,10 @@ bool do_exec(int count, ...)
         return false;
     }
     else if (WIFEXITED (status)){
+       int wstatus = WEXITSTATUS (status);
+       if (wstatus !=0){
+	       return false;
+       }
        return WEXITSTATUS (status);
     }
 
@@ -109,7 +113,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         command[i] = va_arg(args, char *);
 	
     }
-    command[count] = NULL;
+
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
     pid_t pid;
@@ -127,6 +131,10 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
         return false;
     }
     else if (WIFEXITED (status)){
+       int wstatus = WEXITSTATUS (status);
+       if (wstatus !=0){
+	       return false;
+       }
        return WEXITSTATUS (status);
     }
 
@@ -147,3 +155,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 */
 
 
+
+
+
+}
